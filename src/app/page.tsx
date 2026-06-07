@@ -110,6 +110,7 @@ const isRedo = (event: KeyboardEvent): boolean =>
 export default function Home() {
   const [data, setData] = useState<EmailBuilderData>(() => cloneData(defaultTemplate.data));
   const [selectedTemplateId, setSelectedTemplateId] = useState(defaultTemplate.id);
+  const [puckInstanceKey, setPuckInstanceKey] = useState(0);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
   const [recipient, setRecipient] = useState("candidate@nautilus.test");
   const [subject, setSubject] = useState(defaultTemplate.subject);
@@ -166,6 +167,7 @@ export default function Home() {
     setSelectedTemplateId(template.id);
     setSubject(template.subject);
     setData(cloneData(template.data));
+    setPuckInstanceKey((current) => current + 1);
     setSendState({ kind: "idle", message: "" });
   };
 
@@ -384,6 +386,7 @@ export default function Home() {
           </p>
           <div className="min-h-0 flex-1">
             <Puck
+              key={`${selectedTemplateId}-${puckInstanceKey}`}
               config={puckConfig}
               data={data as Data}
               height="calc(100vh - 13rem)"

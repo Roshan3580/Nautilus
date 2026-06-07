@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Nautilus Email Builder",
-  description: "Visual drag-and-drop email builder with live preview and scheduling.",
+  description:
+    "Compose, preview and schedule on-brand marketing emails with a visual drag-and-drop editor and live React Email output.",
 };
 
 export default function RootLayout({

@@ -10,6 +10,22 @@ import { puckConfig, type EmailBuilderData } from "@/lib/puck-config";
 import { ensureEmailDataIds } from "@/lib/puck-data";
 import type { ScheduledEmail } from "@/lib/scheduler-types";
 import { defaultTemplate, starterTemplates } from "@/lib/templates";
+import {
+  BuilderNavbar,
+  CalendarIcon,
+  ClockIcon,
+  CodeIcon,
+  ComposeDivider,
+  ComposeField,
+  Kbd,
+  MonitorIcon,
+  RedoIcon,
+  SendIcon,
+  SmartphoneIcon,
+  UndoIcon,
+} from "@/components/builder/chrome";
+import { cn } from "@/lib/utils";
+import { puckBlockLibraryOverrides } from "@/lib/puck-block-library-ui";
 
 type PreviewMode = "desktop" | "mobile";
 type Theme = "light" | "dark";
@@ -35,7 +51,7 @@ const cloneData = (value: EmailBuilderData): EmailBuilderData =>
   ensureEmailDataIds(JSON.parse(JSON.stringify(value)) as EmailBuilderData);
 
 const fieldClassName =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20";
+  "h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20";
 
 const EditorControls = ({
   onTemplateSelect,
@@ -47,13 +63,13 @@ const EditorControls = ({
   const history = usePuck((s) => s.history);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-5 py-3 dark:border-slate-800 dark:bg-slate-950">
-      <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-        <span className="font-medium text-slate-800 dark:text-slate-100">Template</span>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/80 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-2">
         <select
           value={selectedTemplateId}
           onChange={(event) => onTemplateSelect(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="h-9 w-[180px] rounded-lg border border-border bg-background px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
+          aria-label="Email template"
         >
           {starterTemplates.map((template) => (
             <option key={template.id} value={template.id}>
@@ -61,32 +77,38 @@ const EditorControls = ({
             </option>
           ))}
         </select>
-      </label>
-
-      <div className="hidden h-5 w-px bg-slate-200 sm:block dark:bg-slate-700" />
-
-      <div className="flex items-center gap-2">
+        <div className="mx-1 h-6 w-px bg-border" />
         <button
           type="button"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="inline-flex h-9 items-center rounded-lg px-2 text-muted-foreground transition hover:bg-accent hover:text-foreground disabled:opacity-40"
           onClick={() => history.back()}
           disabled={!history.hasPast}
+          aria-label="Undo"
+          title="Undo"
         >
-          Undo
+          <UndoIcon className="h-4 w-4" />
         </button>
         <button
           type="button"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="inline-flex h-9 items-center rounded-lg px-2 text-muted-foreground transition hover:bg-accent hover:text-foreground disabled:opacity-40"
           onClick={() => history.forward()}
           disabled={!history.hasFuture}
+          aria-label="Redo"
+          title="Redo"
         >
-          Redo
+          <RedoIcon className="h-4 w-4" />
         </button>
       </div>
-
-      <p className="ml-auto hidden text-xs text-slate-400 lg:block dark:text-slate-500">
-        ⌘Z undo · ⌘⇧Z redo
-      </p>
+      <div className="hidden items-center gap-3 text-[11px] text-muted-foreground md:flex">
+        <Kbd>⌘</Kbd>
+        <Kbd>Z</Kbd>
+        <span>Undo</span>
+        <span className="mx-2 h-3 w-px bg-border" />
+        <Kbd>⌘</Kbd>
+        <Kbd>⇧</Kbd>
+        <Kbd>Z</Kbd>
+        <span>Redo</span>
+      </div>
     </div>
   );
 };
@@ -123,15 +145,22 @@ const isRedo = (event: KeyboardEvent): boolean =>
   (event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "z";
 
 const StatusBadge = ({ status }: { status: ScheduledEmail["status"] }) => {
+  if (status === "scheduled") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+        Queued
+      </span>
+    );
+  }
+
   const styles =
-    status === "scheduled"
-      ? "bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-950 dark:text-blue-300"
-      : status === "cancelled"
-        ? "bg-slate-100 text-slate-600 ring-slate-500/10 dark:bg-slate-800 dark:text-slate-300"
-        : "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950 dark:text-emerald-300";
+    status === "cancelled"
+      ? "bg-muted text-muted-foreground"
+      : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ring-1 ring-inset ${styles}`}>
+    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize", styles)}>
       {status}
     </span>
   );
@@ -354,124 +383,94 @@ export default function Home() {
   const scheduledCount = scheduledEmails.filter((item) => item.status === "scheduled").length;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-between gap-4 px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-                N
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Nautilus Email Builder</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Drag-and-drop editor with live React Email preview
-                </p>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <BuilderNavbar dark={theme === "dark"} onThemeChange={(dark) => setTheme(dark ? "dark" : "light")} />
 
-          <button
-            type="button"
-            onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          >
-            {theme === "light" ? "Dark mode" : "Light mode"}
-          </button>
-        </div>
-
-        <div className="border-t border-slate-100 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50">
-          <div className="mx-auto max-w-[1920px] px-5 py-4">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(220px,0.9fr)_auto_auto] lg:items-end">
-              <label className="block space-y-1.5">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Recipient
-                </span>
-                <input
-                  value={recipient}
-                  onChange={(event) => setRecipient(event.target.value)}
-                  type="email"
-                  placeholder="recipient@example.com"
-                  className={fieldClassName}
-                />
-              </label>
-
-              <label className="block space-y-1.5">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Subject
-                </span>
-                <input
-                  value={subject}
-                  onChange={(event) => setSubject(event.target.value)}
-                  type="text"
-                  placeholder="Email subject line"
-                  className={fieldClassName}
-                />
-              </label>
-
-              <label className="block space-y-1.5">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Schedule
-                </span>
+      <section className="mx-auto mt-6 max-w-[1600px] px-6">
+        <div className="rounded-2xl border border-border bg-surface shadow-[var(--shadow-md)]">
+          <div className="flex flex-wrap items-end gap-4 p-4 md:flex-nowrap">
+            <ComposeField label="Recipient" className="min-w-[220px] flex-1">
+              <input
+                value={recipient}
+                onChange={(event) => setRecipient(event.target.value)}
+                type="email"
+                className={fieldClassName}
+              />
+            </ComposeField>
+            <ComposeDivider />
+            <ComposeField label="Subject" className="min-w-[260px] flex-[1.4]">
+              <input
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                type="text"
+                className={fieldClassName}
+              />
+            </ComposeField>
+            <ComposeDivider />
+            <ComposeField label="Schedule" className="min-w-[220px] flex-1">
+              <div className="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm text-foreground shadow-sm">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                 <input
                   value={scheduleAt}
                   onChange={(event) => setScheduleAt(event.target.value)}
                   type="datetime-local"
                   aria-label="Schedule date and time"
-                  className={fieldClassName}
+                  className="w-full bg-transparent outline-none [color-scheme:light] dark:[color-scheme:dark]"
                 />
-              </label>
-
+              </div>
+            </ComposeField>
+            <div className="flex shrink-0 items-center gap-2 pl-2">
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={isSending}
-                className="h-[42px] rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
+                className="btn-send-primary inline-flex h-10 items-center rounded-xl px-4 text-sm font-semibold"
               >
-                {isSending ? "Sending…" : "Send now"}
+                <SendIcon className="mr-2 h-4 w-4" />
+                {isSending ? "Sending…" : "Send Now"}
               </button>
-
               <button
                 type="button"
                 onClick={handleSchedule}
                 disabled={isScheduling}
-                className="h-[42px] rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="inline-flex h-10 items-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground transition hover:bg-accent disabled:opacity-60"
               >
+                <ClockIcon className="mr-2 h-4 w-4" />
                 {isScheduling ? "Scheduling…" : "Schedule"}
               </button>
             </div>
-
-            {sendState.kind !== "idle" ? (
-              <div
-                role="status"
-                aria-live="polite"
-                className={`mt-3 rounded-lg px-4 py-2.5 text-sm ${
-                  sendState.kind === "success"
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200"
-                    : "border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-200"
-                }`}
-              >
-                {sendState.message}
-              </div>
-            ) : null}
           </div>
         </div>
-      </header>
 
-      <main className="mx-auto grid max-w-[1920px] gap-6 px-5 py-6 xl:grid-cols-[minmax(0,2.85fr)_minmax(300px,0.72fr)]">
-        <section className="email-builder-shell flex min-h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="min-h-0 flex-1">
-            <Puck
+        {sendState.kind !== "idle" ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className={cn(
+              "mt-3 rounded-xl px-4 py-2.5 text-sm shadow-[var(--shadow-sm)]",
+              sendState.kind === "success"
+                ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                : "border border-destructive/20 bg-destructive/10 text-destructive",
+            )}
+          >
+            {sendState.message}
+          </div>
+        ) : null}
+      </section>
+
+      <main className="mx-auto mt-6 grid max-w-[1600px] gap-6 px-6 pb-10 lg:grid-cols-[7fr_3fr]">
+        <section className="email-builder-shell puck-light-scope overflow-hidden rounded-2xl border border-border bg-white shadow-[var(--shadow-md)]">
+          <Puck
               key={`${selectedTemplateId}-${puckInstanceKey}`}
               config={puckConfig}
               data={data as Data}
-              height="calc(100vh - 10rem)"
+              height="calc(100vh - 260px)"
               _experimentalFullScreenCanvas
               viewports={puckViewports}
+              overrides={puckBlockLibraryOverrides}
               ui={{
-                leftSideBarWidth: 176,
-                rightSideBarWidth: 248,
+                leftSideBarWidth: 240,
+                rightSideBarWidth: 280,
               }}
               onChange={(nextData) =>
                 setData(ensureEmailDataIds(nextData as EmailBuilderData))
@@ -481,7 +480,7 @@ export default function Home() {
               }
               headerTitle="Email canvas"
               renderHeader={({ children }) => (
-                <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                <div className="border-b border-border bg-surface">
                   <KeyboardShortcuts />
                   <EditorControls
                     onTemplateSelect={handleTemplateSelect}
@@ -491,20 +490,17 @@ export default function Home() {
                 </div>
               )}
             />
-          </div>
         </section>
 
-        <aside className="flex max-h-[calc(100vh-10rem)] flex-col gap-5 overflow-y-auto">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <aside className="flex max-h-[calc(100vh-10rem)] flex-col gap-6 overflow-y-auto">
+          <section className="rounded-2xl border border-border bg-surface shadow-[var(--shadow-md)]">
+            <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
               <div>
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white">Live preview</h2>
-                <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-                  React Email output used for send
-                </p>
+                <h2 className="text-sm font-semibold text-foreground">Live Preview</h2>
+                <p className="text-xs text-muted-foreground">React Email output used for send</p>
               </div>
               <div
-                className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900"
+                className="inline-flex rounded-lg border border-border bg-background p-0.5"
                 role="tablist"
                 aria-label="Preview device size"
               >
@@ -513,130 +509,144 @@ export default function Home() {
                   role="tab"
                   aria-selected={previewMode === "desktop"}
                   onClick={() => setPreviewMode("desktop")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  className={cn(
+                    "grid h-7 w-8 place-items-center rounded-md transition-colors",
                     previewMode === "desktop"
-                      ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
-                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                      ? "bg-surface text-foreground shadow-[var(--shadow-sm)]"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-label="desktop"
                 >
-                  Desktop
+                  <MonitorIcon className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
                   role="tab"
                   aria-selected={previewMode === "mobile"}
                   onClick={() => setPreviewMode("mobile")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  className={cn(
+                    "grid h-7 w-8 place-items-center rounded-md transition-colors",
                     previewMode === "mobile"
-                      ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
-                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                      ? "bg-surface text-foreground shadow-[var(--shadow-sm)]"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-label="mobile"
                 >
-                  Mobile
+                  <SmartphoneIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
 
-            <div className="grid place-items-center rounded-xl border border-slate-200 bg-slate-100/80 p-5 dark:border-slate-800 dark:bg-slate-900/60">
-              <div
-                className={`w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md transition-all dark:border-slate-700 dark:bg-white ${previewWidthClass}`}
-              >
-                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-200 dark:bg-slate-100">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                  <span className="ml-2 truncate text-xs text-slate-500">
-                    {subject || "No subject"}
-                  </span>
-                </div>
-                <div className="max-h-[min(560px,52vh)] overflow-auto bg-white">
-                  {htmlPreview ? (
-                    <iframe
-                      title="Email preview"
-                      srcDoc={htmlPreview}
-                      sandbox=""
-                      className="h-[min(520px,50vh)] w-full border-0 bg-white"
-                    />
-                  ) : (
-                    <div className="flex h-[min(320px,40vh)] flex-col items-center justify-center gap-3 p-6 text-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
-                      <p className="text-sm text-slate-500">Generating preview…</p>
-                    </div>
+            <div className="p-4">
+              <div className="grid place-items-center rounded-xl border border-border bg-background/80 p-4">
+                <div
+                  className={cn(
+                    "preview-email-light w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-lg)] ring-1 ring-black/5 transition-all",
+                    previewWidthClass,
                   )}
+                >
+                  <div className="flex h-9 items-center gap-1.5 border-b border-slate-200 bg-slate-50 px-4">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    <span className="ml-3 truncate text-[11px] font-medium text-slate-500">
+                      {subject || "No subject"}
+                    </span>
+                  </div>
+                  <div className="max-h-[min(560px,52vh)] overflow-auto bg-white">
+                    {htmlPreview ? (
+                      <iframe
+                        title="Email preview"
+                        srcDoc={htmlPreview}
+                        sandbox=""
+                        className="h-[min(520px,50vh)] w-full border-0 bg-white"
+                      />
+                    ) : (
+                      <div className="flex h-[min(320px,40vh)] flex-col items-center justify-center gap-3 p-6 text-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+                        <p className="text-sm text-muted-foreground">Generating preview…</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-
-            <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-                View generated HTML
-              </summary>
-              <pre className="mx-4 mb-4 max-h-40 overflow-auto rounded-lg bg-slate-900 p-3 text-xs leading-relaxed text-slate-100">
-                {htmlPreview || "Generating React Email HTML preview…"}
-              </pre>
-            </details>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white">Scheduled sends</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {scheduledCount} upcoming · {scheduledEmails.length} total
-                </p>
-              </div>
+          <details className="rounded-2xl border border-border bg-surface shadow-[var(--shadow-md)]">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+              <CodeIcon className="h-4 w-4 text-primary" />
+              View generated HTML payload
+            </summary>
+            <pre className="mx-5 mb-5 max-h-[260px] overflow-auto rounded-xl border border-border bg-[oklch(0.15_0.03_265)] p-4 font-mono text-[11px] leading-relaxed text-[oklch(0.92_0.02_220)]">
+              {htmlPreview || "Generating React Email HTML preview…"}
+            </pre>
+          </details>
+
+          <section className="rounded-2xl border border-border bg-surface shadow-[var(--shadow-md)]">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h3 className="text-sm font-semibold text-foreground">Scheduled Emails</h3>
               {isLoadingScheduled ? (
-                <span className="text-xs text-slate-400">Loading…</span>
-              ) : null}
+                <span className="text-xs text-muted-foreground">Loading…</span>
+              ) : (
+                <span className="inline-flex h-5 items-center rounded-full border border-border bg-background px-2 text-[10px] font-medium text-muted-foreground">
+                  {scheduledCount} queued
+                </span>
+              )}
             </div>
 
-            <div className="max-h-56 space-y-2 overflow-auto">
+            <div className="max-h-56 space-y-2 overflow-auto p-3">
               {isLoadingScheduled ? (
                 <div className="space-y-2">
                   {[0, 1].map((item) => (
                     <div
                       key={item}
-                      className="animate-pulse rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+                      className="animate-pulse rounded-xl border border-border bg-background p-3"
                     >
-                      <div className="mb-2 h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
-                      <div className="h-2.5 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+                      <div className="mb-2 h-3 w-2/3 rounded bg-muted" />
+                      <div className="h-2.5 w-1/2 rounded bg-muted" />
                     </div>
                   ))}
                 </div>
               ) : scheduledEmails.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center dark:border-slate-700">
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No scheduled emails yet</p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Choose a date above and click Schedule to queue a send.
+                <div className="grid place-items-center rounded-xl border border-dashed border-border px-4 py-10 text-center">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
+                    <CalendarIcon className="h-4 w-4" />
+                  </div>
+                  <p className="mt-3 text-sm font-medium text-foreground">No scheduled emails</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pick a future time and click Schedule to queue one.
                   </p>
                 </div>
               ) : (
                 scheduledEmails.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60"
+                    className="rounded-xl border border-border bg-background p-3 transition-colors hover:border-primary/40"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-900 dark:text-white">{item.subject}</p>
-                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">To {item.to}</p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-foreground">{item.subject}</p>
+                          <StatusBadge status={item.status} />
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.to}</p>
+                        <p className="mt-1 flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground">
+                          <ClockIcon className="h-3 w-3" />
                           {new Date(item.scheduledAt).toLocaleString()}
                         </p>
                       </div>
-                      <StatusBadge status={item.status} />
-                    </div>
-                    {item.status === "scheduled" ? (
-                      <div className="mt-3 flex justify-end">
+                      {item.status === "scheduled" ? (
                         <button
                           type="button"
                           onClick={() => handleCancelScheduled(item.id)}
-                          className="rounded-lg px-2.5 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-destructive"
+                          aria-label="Cancel"
                         >
-                          Cancel
+                          ×
                         </button>
-                      </div>
-                    ) : null}
+                      ) : null}
+                    </div>
                   </div>
                 ))
               )}

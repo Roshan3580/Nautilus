@@ -450,7 +450,6 @@
   white-space: nowrap;
 }
 
-/* Properties panel stays light/readable */
 .puck-light-scope [class*="PuckFields"],
 .puck-light-scope [class*="AutoField"],
 .puck-light-scope [class*="Input"],

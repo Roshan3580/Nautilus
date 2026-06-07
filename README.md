@@ -1,6 +1,9 @@
-# Email Builder with Drag & Drop
+# Nautilus Email Builder
 
-Nautilus take-home implementation: a polished single-page visual email builder in Next.js App Router with strict TypeScript, React 19, Tailwind 4, and `@puckeditor/core`.
+Take-home submission: a drag-and-drop marketing email builder on Next.js App Router, Puck, React Email, and Resend.
+
+**Live demo:** [email-builder-eight-delta.vercel.app](https://email-builder-eight-delta.vercel.app)  
+**Source (Vercel deploy):** [github.com/Roshan3580/email-builder](https://github.com/Roshan3580/email-builder)
 
 ## Setup
 
@@ -9,128 +12,125 @@ npm install
 npm run dev
 ```
 
-Environment variables for Resend (see `.env.example`):
+Open [http://localhost:3000](http://localhost:3000).
 
-- `RESEND_API_KEY`: Resend API key for real sends.
-- `RESEND_FROM_EMAIL`: Sender address (defaults to `onboarding@resend.dev`).
+### Environment variables
 
-**Local:** copy the example file and fill in your key:
+Copy the example file for local development:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Restart `npm run dev` after editing `.env.local`.
+| Variable | Purpose |
+|----------|---------|
+| `RESEND_API_KEY` | Enables real sends through Resend. If missing, `/api/send` returns a successful mock response so the UI flow still works. |
+| `RESEND_FROM_EMAIL` | Sender address. Defaults to `onboarding@resend.dev`. |
 
-**Vercel (production):** add the same variables in the [Vercel dashboard](https://vercel.com) → your project → **Settings** → **Environment Variables**. Apply to Production (and Preview if you want sends in preview deploys). Redeploy after saving. Never commit real keys to git.
+Restart the dev server after editing `.env.local`.
 
-Verify locally:
+**Vercel:** add the same variables under Project → Settings → Environment Variables, then redeploy. Do not commit secrets.
+
+### Verification
 
 ```bash
 npm run lint
 npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+## Deployed demo behavior
+
+- The hosted app is the same codebase as this repo (deployed from `email-builder` on Vercel).
+- **Send Now** uses Resend when `RESEND_API_KEY` is set in Vercel; otherwise it returns mock success with an explicit message (no crash, no silent failure).
+- **Schedule / cancel** work against the server-side JSON store. On Vercel’s serverless runtime, scheduled data is ephemeral per instance — fine for demoing the API and UI, not for durable production scheduling (see limitations below).
 
 ## Features
 
-### Tier 1 (Must Have)
+**Tier 1**
 
-- Puck drag-and-drop editor with Heading, Text, Button, Image, Section, Container.
-- Editable props: content, colors, font size, padding, alignment, URLs/links.
-- Live preview synced to editor state.
-- Send via Resend with recipient, subject, and status feedback.
+- Puck editor: Heading, Text, Button, Image, Section, Container
+- Editable props: content, colors, font size, padding, alignment, image URLs, links
+- Live preview synced to editor state
+- Send with recipient, subject, and inline status feedback
 
-### Tier 2 (Expected)
+**Tier 2**
 
-- Desktop/mobile preview width toggle.
-- Schedule date/time picker, Send now / Schedule actions.
-- Scheduled email list with cancellation.
-- Scheduling APIs and swappable scheduler adapter.
+- Desktop / mobile preview widths (600px / 390px)
+- Schedule date-time picker, scheduled list, cancellation
+- `POST /api/schedule`, `GET /api/schedule`, `DELETE /api/schedule/[id]`
 
-### Tier 3 (Selected)
+**Tier 3**
 
-- Undo/redo buttons and keyboard shortcuts (`Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`).
-- Starter templates: Welcome Email, Newsletter, Promo.
+- Undo / redo (toolbar + `Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`)
+- Starter templates: Welcome Email, Newsletter, Promo
+- Dark mode on app chrome; Puck canvas and email preview stay light
 
-## Architecture Decisions
+## Architecture
 
-- Keep all user-facing builder functionality in a single page (`src/app/page.tsx`) for fast iteration and a cohesive UX.
-- Use `@puckeditor/core` as the source of truth for editable content structure and drag/drop behavior.
-- Puck owns structured editor state; React Email owns final email-safe rendering from that state.
-- Add a scheduler adapter (`src/lib/scheduler.ts`) so scheduling infrastructure is decoupled from delivery logic.
-- Define component schema and defaults in `src/lib/puck-config.tsx` to separate UI orchestration from content model.
-- Add `src/lib/templates.ts` for reusable starter template data with subjects.
-- Add `src/lib/email-render.tsx` for React Email component mapping and deterministic HTML generation used by `/api/send`.
-- Implement `/api/send` with Resend, but guard for missing API key with clear dev-mode mock success to avoid local crashes.
+```
+Puck editor state (JSON)
+        ↓
+src/lib/puck-config.tsx     — block schema, defaults, canvas render
+src/lib/email-render.tsx    — map blocks → React Email components → HTML
+        ↓
+Live preview iframe + /api/send
+```
 
-## Tradeoffs
+**Why two render paths in Puck?** Puck’s canvas uses inline React for editing. Preview and send both call `renderEmailHtml()` so what you preview is what Resend receives.
 
-- **Puck preview vs React Email preview:** Preview and send both use `renderEmailHtml()` so output matches Resend delivery.
-- **Local JSON scheduler vs Temporal:** JSON file store is simpler to run in review environments; Temporal adapter can replace `src/lib/scheduler.ts` without changing UI/API contracts.
-- **No persistence for drafts:** Editor state lives in the browser session; templates are static starters only.
-- **URL-based images only:** No upload pipeline or asset hosting in this take-home scope.
-- **Mock send without API key:** Returns explicit success in dev mode instead of failing, so reviewers can test flows without Resend credentials.
+**Key files**
+
+| Path | Role |
+|------|------|
+| `src/app/page.tsx` | UI shell: compose bar, Puck, preview, schedule panel |
+| `src/lib/puck-config.tsx` | Puck component definitions and field schema |
+| `src/lib/email-render.tsx` | React Email render pipeline |
+| `src/lib/templates.ts` | Starter template data + subjects |
+| `src/lib/scheduler.ts` | Scheduling adapter (swappable) |
+| `src/app/api/send/route.ts` | Resend delivery |
+| `src/app/api/schedule/*` | Schedule CRUD |
+
+## Resend sending
+
+1. Client posts `{ to, subject, data }` to `/api/send`.
+2. Server renders HTML via `renderEmailHtml(data, subject)`.
+3. If `RESEND_API_KEY` is set → `resend.emails.send()`.
+4. If not → `{ success: true, mock: true, message: "…not set…" }`.
+
+This keeps local review and CI usable without API keys.
+
+## Scheduling and the Temporal tradeoff
+
+Scheduling goes through a small adapter interface in `src/lib/scheduler.ts`:
+
+```ts
+list() | schedule(input) | cancel(id)
+```
+
+Current implementation writes to `.data/scheduled-emails.json` on disk. Status values: `scheduled`, `cancelled`, `sent` (reserved for a future worker).
+
+**Why not Temporal here?** The take-home asks for scheduling UX and API shape, not running a worker cluster. A JSON adapter is zero-infra and easy to review locally. Temporal fits later: `schedule()` starts a workflow/timer, `cancel()` signals it, a worker calls the same render + send path at `scheduledAt`. The UI and route contracts stay the same — only the adapter implementation changes.
 
 ## Assumptions
 
-- The take-home prioritizes builder/editor quality over production-grade persistence/auth.
-- Live preview should reflect render output in-app and generated email HTML should be inspectable.
-- Using URL-based image inputs is sufficient (no upload pipeline required).
-- Mock-send mode is acceptable when `RESEND_API_KEY` is absent.
+- Reviewers care most about editor quality and render fidelity, not auth or multi-tenant persistence.
+- Image blocks use URLs only (no upload pipeline).
+- Mock send without a Resend key is acceptable for demos and grading.
 
-## Time Spent
+## Known limitations
 
-Approximately 5–6 hours:
+- Editor state is in-memory in the browser; refresh clears unsaved work.
+- Scheduled emails are stored locally (`.data/`) — not durable on Vercel serverless; nothing actually fires at `scheduledAt` yet.
+- No rich-text editor; content fields are plain text / textarea.
+- No automated tests in this submission.
+- Puck field labels are generic (`Font Size`, `Text Color`) rather than per-block copy from the mockups.
 
-- Core editor + component schema: ~1.5h
-- React Email rendering + send flow: ~1h
-- Preview, templates, undo/redo shortcuts: ~1h
-- Tier 2 scheduling (UI, APIs, adapter): ~1.5h
-- Polish, docs, lint/build pass: ~1h
+## Time spent
 
-## What Works
+~5–6 hours total:
 
-- Drag/drop visual editor powered by Puck.
-- Components: Heading, Text, Button, Image, Section, Container.
-- Editable props for content, colors, font size, padding, alignment, and links/URLs.
-- Live preview that updates as editor state changes.
-- Desktop/mobile preview width toggle.
-- Starter templates: Welcome Email, Newsletter, Promo.
-- Undo/redo buttons and keyboard shortcuts (`Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`).
-- Recipient + subject inputs and Send button.
-- Tier 2 scheduling: schedule date/time picker, schedule action, scheduled-email list, and cancellation UI.
-- Scheduling APIs: `POST /api/schedule`, `GET /api/schedule`, `DELETE /api/schedule/[id]`.
-- Scheduled payload shape: `id`, `to`, `subject`, `data`, `scheduledAt`, `status`.
-- `/api/send` route with Resend integration and dev-mode mock success fallback.
-
-## Scheduling Implementation
-
-- Uses a local adapter in `src/lib/scheduler.ts` backed by `.data/scheduled-emails.json`.
-- Routes:
-  - `POST /api/schedule` validates `to`, `subject`, and future `scheduledAt`, then stores schedule.
-  - `GET /api/schedule` lists all scheduled items.
-  - `DELETE /api/schedule/[id]` marks a scheduled item as `cancelled`.
-- Status values are currently `scheduled | cancelled | sent` (with `sent` reserved for future processor integration).
-
-## Why Local Adapter (vs Temporal)
-
-- For the take-home, a local JSON-backed adapter is easier to run and deploy without extra infra.
-- This keeps setup lightweight and deterministic for reviewers while still modeling real scheduling contracts.
-- The adapter boundary keeps the app logic stable while the backend scheduler implementation changes.
-
-## Temporal Integration Later
-
-- Replace the `scheduler` adapter implementation with a Temporal-backed adapter while preserving the same interface (`list`, `schedule`, `cancel`).
-- `schedule` would start a Temporal workflow/timer per job (or enqueue a durable schedule task).
-- `cancel` would signal/cancel the workflow.
-- A worker would execute due emails by calling the same rendering + send pathway used today.
-
-## Future Improvements
-
-- Save/load drafts and templates from a database.
-- Add rich text controls and inline color pickers for better authoring UX.
-- Add image upload support and hosted asset management.
-- Add test coverage (unit tests for renderer + API route, E2E for send flow).
-- Add accessibility audits and email-client compatibility snapshots.
+- Puck schema + editor wiring — 1.5h
+- React Email render + send route — 1h
+- Preview, templates, undo/redo — 1h
+- Scheduling (UI, API, adapter) — 1.5h
+- UI polish, dark mode scoping, docs — 1h

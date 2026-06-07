@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *):not(:is(.puck-light-scope *)));
 
 :root {
   --background: #f8fafc;
@@ -33,12 +33,6 @@ body {
   min-height: calc(100vh - 9.5rem);
 }
 
-.email-builder-shell {
-  --puck-user-left-side-bar-width: 168px;
-  --puck-user-right-side-bar-width: 228px;
-  --puck-frame-width: minmax(0, 1fr);
-}
-
 @media (min-width: 766px) {
   .email-builder-shell {
     --puck-user-left-side-bar-width: 168px;
@@ -60,30 +54,57 @@ body {
   }
 }
 
-.email-builder-shell [class*="PuckCanvas-inner"] {
+.email-builder-shell {
+  --puck-user-left-side-bar-width: 168px;
+  --puck-user-right-side-bar-width: 228px;
+  --puck-frame-width: minmax(0, 1fr);
+}
+
+.puck-light-scope {
+  color-scheme: light;
+  background-color: #ffffff;
+  color: #0f172a;
+  isolation: isolate;
+}
+
+.puck-light-scope,
+.puck-light-scope * {
+  color-scheme: light;
+}
+
+.puck-light-scope input:not([type="checkbox"]):not([type="radio"]),
+.puck-light-scope select,
+.puck-light-scope textarea {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+
+.puck-light-scope > div {
+  min-height: calc(100vh - 9.5rem);
+}
+
+.puck-light-scope [class*="PuckCanvas-inner"] {
   padding: 1.25rem 0.75rem 2rem;
   background-color: #eef2f7;
   background-image: radial-gradient(circle at 1px 1px, #cbd5e1 1px, transparent 0);
   background-size: 20px 20px;
 }
 
-.dark .email-builder-shell [class*="PuckCanvas-inner"] {
-  background-color: #0f172a;
-  background-image: radial-gradient(circle at 1px 1px, #334155 1px, transparent 0);
-}
-
-.email-builder-shell [class*="PuckPreview-frame"],
-.email-builder-shell #frame-root {
+.puck-light-scope [class*="PuckPreview-frame"],
+.puck-light-scope #frame-root {
   min-height: 720px;
 }
 
-.email-builder-shell [class*="PuckCanvas-root"] {
+.puck-light-scope [class*="PuckCanvas-root"] {
   box-shadow:
     0 1px 2px rgb(15 23 42 / 0.06),
     0 12px 32px rgb(15 23 42 / 0.08);
 }
 
-.email-builder-shell [class*="LeftSideBar"],
-.email-builder-shell [class*="RightSideBar"] {
+.puck-light-scope [class*="LeftSideBar"],
+.puck-light-scope [class*="RightSideBar"] {
   font-size: 12px;
+  background-color: #ffffff;
+  color: #0f172a;
 }

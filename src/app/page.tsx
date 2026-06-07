@@ -47,13 +47,13 @@ const EditorControls = ({
   const history = usePuck((s) => s.history);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-5 py-3 dark:border-slate-800 dark:bg-slate-950">
-      <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-        <span className="font-medium text-slate-800 dark:text-slate-100">Template</span>
+    <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-5 py-3">
+      <label className="flex items-center gap-2 text-sm text-slate-600">
+        <span className="font-medium text-slate-800">Template</span>
         <select
           value={selectedTemplateId}
           onChange={(event) => onTemplateSelect(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         >
           {starterTemplates.map((template) => (
             <option key={template.id} value={template.id}>
@@ -63,12 +63,12 @@ const EditorControls = ({
         </select>
       </label>
 
-      <div className="hidden h-5 w-px bg-slate-200 sm:block dark:bg-slate-700" />
+      <div className="hidden h-5 w-px bg-slate-200 sm:block" />
 
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
           onClick={() => history.back()}
           disabled={!history.hasPast}
         >
@@ -76,7 +76,7 @@ const EditorControls = ({
         </button>
         <button
           type="button"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
           onClick={() => history.forward()}
           disabled={!history.hasFuture}
         >
@@ -84,7 +84,7 @@ const EditorControls = ({
         </button>
       </div>
 
-      <p className="ml-auto hidden text-xs text-slate-400 lg:block dark:text-slate-500">
+      <p className="ml-auto hidden text-xs text-slate-400 lg:block">
         ⌘Z undo · ⌘⇧Z redo
       </p>
     </div>
@@ -460,8 +460,8 @@ export default function Home() {
       </header>
 
       <main className="mx-auto grid max-w-[1920px] gap-6 px-5 py-6 xl:grid-cols-[minmax(0,2.85fr)_minmax(300px,0.72fr)]">
-        <section className="email-builder-shell flex min-h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="min-h-0 flex-1">
+        <section className="email-builder-shell flex min-h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800">
+          <div className="puck-light-scope min-h-0 flex-1">
             <Puck
               key={`${selectedTemplateId}-${puckInstanceKey}`}
               config={puckConfig}
@@ -481,7 +481,7 @@ export default function Home() {
               }
               headerTitle="Email canvas"
               renderHeader={({ children }) => (
-                <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                <div className="border-b border-slate-200 bg-white">
                   <KeyboardShortcuts />
                   <EditorControls
                     onTemplateSelect={handleTemplateSelect}

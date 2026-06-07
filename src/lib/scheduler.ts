@@ -9,7 +9,10 @@ export type SchedulerAdapter = {
   cancel: (id: string) => Promise<ScheduledEmail | null>;
 };
 
-const dataDir = path.join(process.cwd(), ".data");
+const dataDir =
+  process.env.VERCEL === "1"
+    ? path.join("/tmp", "nautilus-email-builder")
+    : path.join(process.cwd(), ".data");
 const dataFile = path.join(dataDir, "scheduled-emails.json");
 
 const ensureStore = async (): Promise<void> => {

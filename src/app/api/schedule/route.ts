@@ -41,22 +41,33 @@ const parseBody = async (request: Request): Promise<ScheduleEmailInput | null> =
 };
 
 export async function GET() {
-  const items = await scheduler.list();
-  return NextResponse.json({ success: true, items });
+  try {
+    const items = await scheduler.list();
+    return NextResponse.json({ success: true, items });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to load scheduled emails.";
+    return NextResponse.json({ success: false, message, items: [] }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-  const payload = await parseBody(request);
-  if (!payload) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Invalid payload. Provide to, subject, data, and a future scheduledAt.",
-      },
-      { status: 400 },
-    );
-  }
+  try {
+    const payload = await parseBody(request);
+    if (!payload) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid payload. Provide to, subject, data, and a future scheduledAt.",
+        },
+        { status: 400 },
+      );
+    }
 
-  const scheduled = await scheduler.schedule(payload);
-  return NextResponse.json({ success: true, item: scheduled });
+    const scheduled = await scheduler.schedule(payload);
+    return NextResponse.json({ success: true, item: scheduled });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to schedule email.";
+    return NextResponse.json({ success: false, message }, { status: 500 });
+  }
 }

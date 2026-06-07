@@ -9,10 +9,20 @@ npm install
 npm run dev
 ```
 
-Optional environment variables (create `.env.local`):
+Environment variables for Resend (see `.env.example`):
 
 - `RESEND_API_KEY`: Resend API key for real sends.
 - `RESEND_FROM_EMAIL`: Sender address (defaults to `onboarding@resend.dev`).
+
+**Local:** copy the example file and fill in your key:
+
+```bash
+cp .env.example .env.local
+```
+
+Restart `npm run dev` after editing `.env.local`.
+
+**Vercel (production):** add the same variables in the [Vercel dashboard](https://vercel.com) → your project → **Settings** → **Environment Variables**. Apply to Production (and Preview if you want sends in preview deploys). Redeploy after saving. Never commit real keys to git.
 
 Verify locally:
 

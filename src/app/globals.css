@@ -29,7 +29,11 @@ body {
   min-height: calc(100vh - 13rem);
 }
 
-.email-builder-shell [class*="DropZone"] {
+.email-builder-shell {
+  --puck-frame-width: minmax(480px, 1fr);
+}
+
+.email-builder-shell [class*="PuckPreview-frame"],
+.email-builder-shell #frame-root {
   min-height: 720px;
-  padding: 24px;
 }

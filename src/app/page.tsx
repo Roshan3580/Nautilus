@@ -50,6 +50,18 @@ const usePuck = createUsePuck<typeof puckConfig>();
 const cloneData = (value: EmailBuilderData): EmailBuilderData =>
   ensureEmailDataIds(JSON.parse(JSON.stringify(value)) as EmailBuilderData);
 
+const parseApiJson = async <T,>(response: Response): Promise<T> => {
+  const text = await response.text();
+  if (!text.trim()) {
+    throw new Error(`Server returned an empty response (${response.status}).`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Server returned an invalid response (${response.status}).`);
+  }
+};
+
 const fieldClassName =
   "h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20";
 
@@ -218,7 +230,7 @@ export default function Home() {
       setIsLoadingScheduled(true);
       try {
         const response = await fetch("/api/schedule");
-        const result = (await response.json()) as ScheduleListResponse;
+        const result = await parseApiJson<ScheduleListResponse>(response);
         if (response.ok && result.success) {
           setScheduledEmails(result.items);
         }
@@ -325,11 +337,11 @@ export default function Home() {
         }),
       });
 
-      const result = (await response.json()) as {
+      const result = await parseApiJson<{
         success: boolean;
         message?: string;
         item?: ScheduledEmail;
-      };
+      }>(response);
 
       if (!response.ok || !result.success || !result.item) {
         throw new Error(result.message ?? "Failed to schedule email.");
@@ -358,11 +370,11 @@ export default function Home() {
       const response = await fetch(`/api/schedule/${id}`, {
         method: "DELETE",
       });
-      const result = (await response.json()) as {
+      const result = await parseApiJson<{
         success: boolean;
         message?: string;
         item?: ScheduledEmail;
-      };
+      }>(response);
       if (!response.ok || !result.success || !result.item) {
         throw new Error(result.message ?? "Failed to cancel scheduled email.");
       }

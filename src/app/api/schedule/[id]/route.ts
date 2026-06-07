@@ -12,11 +12,16 @@ export async function DELETE(
     return NextResponse.json({ success: false, message: "Missing schedule id." }, { status: 400 });
   }
 
-  const cancelled = await scheduler.cancel(id);
+  try {
+    const cancelled = await scheduler.cancel(id);
 
-  if (!cancelled) {
-    return NextResponse.json({ success: false, message: "Scheduled email not found." }, { status: 404 });
+    if (!cancelled) {
+      return NextResponse.json({ success: false, message: "Scheduled email not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, item: cancelled });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to cancel scheduled email.";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true, item: cancelled });
 }

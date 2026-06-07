@@ -151,7 +151,7 @@ Temporal (or cron hitting `run-due`) would replace the file adapter and manual t
 
 ## Time spent
 
-~6–7 hours:
+~3–4 hours:
 
 - Puck schema + editor — 1.5h
 - React Email render + send — 1h

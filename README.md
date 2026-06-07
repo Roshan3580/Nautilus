@@ -42,7 +42,8 @@ npm run build
 
 - The hosted app is the same codebase as this repo (deployed from `email-builder` on Vercel).
 - **Send Now** uses Resend when `RESEND_API_KEY` is set in Vercel; otherwise it returns mock success with an explicit message (no crash, no silent failure).
-- **Schedule / cancel** work against the server-side JSON store. On Vercel’s serverless runtime, scheduled data is ephemeral per instance — fine for demoing the API and UI, not for durable production scheduling (see limitations below).
+- **Schedule / cancel** work against the server-side JSON store. Due emails are sent by calling `POST /api/schedule/run-due` (not automatic on Vercel — see scheduling execution below).
+- On Vercel’s serverless runtime, scheduled data is ephemeral per instance — fine for demoing the API and UI, not for durable production scheduling (see limitations below).
 
 ## Features
 
@@ -58,6 +59,7 @@ npm run build
 - Desktop / mobile preview widths (600px / 390px)
 - Schedule date-time picker, scheduled list, cancellation
 - `POST /api/schedule`, `GET /api/schedule`, `DELETE /api/schedule/[id]`
+- `POST /api/schedule/run-due` — execute due scheduled sends
 
 **Tier 3**
 
@@ -87,29 +89,46 @@ Live preview iframe + /api/send
 | `src/lib/email-render.tsx` | React Email render pipeline |
 | `src/lib/templates.ts` | Starter template data + subjects |
 | `src/lib/scheduler.ts` | Scheduling adapter (swappable) |
-| `src/app/api/send/route.ts` | Resend delivery |
-| `src/app/api/schedule/*` | Schedule CRUD |
+| `src/lib/scheduler-executor.ts` | Finds due jobs and sends them |
+| `src/lib/email-send.ts` | Shared Resend send used by Send Now and scheduler |
+| `src/app/api/send/route.ts` | Send Now HTTP handler |
+| `src/app/api/schedule/*` | Schedule CRUD + run-due execution |
 
 ## Resend sending
 
-1. Client posts `{ to, subject, data }` to `/api/send`.
-2. Server renders HTML via `renderEmailHtml(data, subject)`.
-3. If `RESEND_API_KEY` is set → `resend.emails.send()`.
-4. If not → `{ success: true, mock: true, message: "…not set…" }`.
+Both **Send Now** and scheduled execution call `sendEmail()` in `src/lib/email-send.ts`:
 
-This keeps local review and CI usable without API keys.
+1. Render HTML via `renderEmailHtml(data, subject)`.
+2. If `RESEND_API_KEY` is set → `resend.emails.send()`.
+3. If not → mock success with an explicit message (no crash).
 
-## Scheduling and the Temporal tradeoff
+Send Now posts to `/api/send`. The scheduler executor reuses the same function.
 
-Scheduling goes through a small adapter interface in `src/lib/scheduler.ts`:
+## Scheduling and execution
+
+Scheduling goes through a small adapter in `src/lib/scheduler.ts`:
 
 ```ts
-list() | schedule(input) | cancel(id)
+list() | schedule(input) | cancel(id) | listDue(now?) | markSent(id)
 ```
 
-Current implementation writes to `.data/scheduled-emails.json` on disk. Status values: `scheduled`, `cancelled`, `sent` (reserved for a future worker).
+Storage is `.data/scheduled-emails.json` locally, `/tmp` on Vercel. Status values: `scheduled`, `cancelled`, `sent`.
 
-**Why not Temporal here?** The take-home asks for scheduling UX and API shape, not running a worker cluster. A JSON adapter is zero-infra and easy to review locally. Temporal fits later: `schedule()` starts a workflow/timer, `cancel()` signals it, a worker calls the same render + send path at `scheduledAt`. The UI and route contracts stay the same — only the adapter implementation changes.
+**Executing due emails:** `runDueScheduledEmails()` in `src/lib/scheduler-executor.ts` loads items with `status === "scheduled"` and `scheduledAt <= now`, sends each via `sendEmail()`, and marks successful ones `sent`. Failures are collected per item without aborting the batch.
+
+Trigger manually:
+
+```bash
+curl -X POST http://localhost:3000/api/schedule/run-due
+```
+
+Scheduled emails can be created, listed, cancelled, and executed through `/api/schedule/run-due`. In production, this route would be invoked by Temporal, a cron job, or a background worker on an interval.
+
+**Vercel note:** there is no persistent worker in this deployment. Automatic background execution is intentionally represented as an adapter boundary — you schedule in the UI, then call `run-due` when the time passes (or wire an external cron to hit that route).
+
+## Temporal later
+
+Temporal would replace the storage/execution adapter while keeping the same HTTP contracts. `schedule()` starts a workflow/timer; `cancel()` signals it; a worker calls the same `sendEmail()` path at `scheduledAt` (equivalent to today’s `run-due` loop).
 
 ## Assumptions
 
@@ -120,7 +139,7 @@ Current implementation writes to `.data/scheduled-emails.json` on disk. Status v
 ## Known limitations
 
 - Editor state is in-memory in the browser; refresh clears unsaved work.
-- Scheduled emails are stored locally (`.data/`) — not durable on Vercel serverless; nothing actually fires at `scheduledAt` yet.
+- Scheduled email storage is file-based and ephemeral on Vercel; there is no always-on cron in this repo — call `POST /api/schedule/run-due` to process due sends.
 - No rich-text editor; content fields are plain text / textarea.
 - No automated tests in this submission.
 - Puck field labels are generic (`Font Size`, `Text Color`) rather than per-block copy from the mockups.

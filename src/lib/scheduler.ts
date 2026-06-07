@@ -7,6 +7,8 @@ export type SchedulerAdapter = {
   list: () => Promise<ScheduledEmail[]>;
   schedule: (input: ScheduleEmailInput) => Promise<ScheduledEmail>;
   cancel: (id: string) => Promise<ScheduledEmail | null>;
+  listDue: (now?: Date) => Promise<ScheduledEmail[]>;
+  markSent: (id: string) => Promise<ScheduledEmail | null>;
 };
 
 const dataDir =
@@ -79,6 +81,32 @@ const localScheduler: SchedulerAdapter = {
     const updated: ScheduledEmail = {
       ...current,
       status: "cancelled",
+      updatedAt: new Date().toISOString(),
+    };
+    records[index] = updated;
+    await writeAll(records);
+    return updated;
+  },
+  async listDue(now = new Date()) {
+    const records = await readAll();
+    const cutoff = now.toISOString();
+    return records
+      .filter((item) => item.status === "scheduled" && item.scheduledAt <= cutoff)
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+  },
+  async markSent(id) {
+    const records = await readAll();
+    const index = records.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return null;
+    }
+    const current = records[index];
+    if (current.status !== "scheduled") {
+      return null;
+    }
+    const updated: ScheduledEmail = {
+      ...current,
+      status: "sent",
       updatedAt: new Date().toISOString(),
     };
     records[index] = updated;

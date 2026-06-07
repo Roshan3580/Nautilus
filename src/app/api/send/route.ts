@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
-import { renderEmailHtml } from "@/lib/email-render";
+
+import { sendEmail } from "@/lib/email-send";
 import type { EmailBuilderData } from "@/lib/puck-config";
 
 type SendRequest = {
@@ -45,47 +45,25 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const html = await renderEmailHtml(payload.data, payload.subject);
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const result = await sendEmail(payload);
 
-  if (!apiKey) {
-    return NextResponse.json({
-      success: true,
-      message:
-        "Dev mode mock success: RESEND_API_KEY is not set. Email was not sent but payload was accepted.",
-      mock: true,
-      to: payload.to,
-      subject: payload.subject,
-    });
-  }
-
-  try {
-    const resend = new Resend(apiKey);
-    const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
-
-    const result = await resend.emails.send({
-      from,
-      to: [payload.to],
-      subject: payload.subject,
-      html,
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Email sent successfully.",
-      id: result.data?.id ?? null,
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error while sending email.";
-
+  if (!result.success) {
     return NextResponse.json(
       {
         success: false,
-        message,
+        message: result.message,
       },
       { status: 500 },
     );
   }
+
+  return NextResponse.json({
+    success: true,
+    message: result.message,
+    mock: result.mock,
+    to: payload.to,
+    subject: payload.subject,
+    id: result.id ?? null,
+  });
 }

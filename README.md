@@ -1,114 +1,126 @@
 # Email Builder with Drag & Drop
 
-**Nautilus Engineering · Full-Stack Engineer Take-Home**
-
-## Getting Started
-
-### Option A: Fork (recommended)
-
-1. Click **Fork** on this repo to create your own copy
-2. Clone your fork locally:
-   ```bash
-   git clone https://github.com/<your-username>/nautilus-email-builder.git
-   cd nautilus-email-builder
-   ```
-
-### Option B: Clone directly
-
-```bash
-git clone https://github.com/xxxoooxoxo/nautilus-email-builder.git
-cd nautilus-email-builder
-```
-
-> **⚠️ Important:** Do **not** push to this repository. Work on your own fork or a local copy only. If you cloned directly, remove the remote before starting:
-> ```bash
-> git remote remove origin
-> ```
-
----
-
-## Overview
-
-A visual email builder that lets users compose, preview, and send emails using a drag-and-drop interface.
-
-## Tech Stack
-
-| Technology | Purpose |
-|---|---|
-| Next.js 15+ (App Router) | Application framework |
-| TypeScript (strict) | Type safety |
-| React Email | Email-safe components |
-| Resend | Email delivery |
-| Puck Editor | Drag & drop builder |
-| Temporal | Durable scheduling |
+Nautilus take-home implementation: a polished single-page visual email builder in Next.js App Router with strict TypeScript, React 19, Tailwind 4, and `@puckeditor/core`.
 
 ## Setup
 
 ```bash
-# Install dependencies
 npm install
-
-# Copy env vars
-cp .env.example .env.local
-# Fill in your RESEND_API_KEY, etc.
-
-# Run dev server
 npm run dev
+```
+
+Optional environment variables (create `.env.local`):
+
+- `RESEND_API_KEY`: Resend API key for real sends.
+- `RESEND_FROM_EMAIL`: Sender address (defaults to `onboarding@resend.dev`).
+
+Verify locally:
+
+```bash
+npm run lint
+npm run build
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Environment Variables
+## Features
 
-| Variable | Description |
-|---|---|
-| `RESEND_API_KEY` | API key from [resend.com](https://resend.com) |
-| `RESEND_FROM_EMAIL` | Sender email address (default: `onboarding@resend.dev`) |
-| `TEMPORAL_ADDRESS` | Temporal server address (default: `localhost:7233`) |
+### Tier 1 (Must Have)
 
-### Temporal (for scheduling)
+- Puck drag-and-drop editor with Heading, Text, Button, Image, Section, Container.
+- Editable props: content, colors, font size, padding, alignment, URLs/links.
+- Live preview synced to editor state.
+- Send via Resend with recipient, subject, and status feedback.
 
-```bash
-# Install Temporal CLI: https://docs.temporal.io/cli
-temporal server start-dev
-```
+### Tier 2 (Expected)
 
-## Requirements
+- Desktop/mobile preview width toggle.
+- Schedule date/time picker, Send now / Schedule actions.
+- Scheduled email list with cancellation.
+- Scheduling APIs and swappable scheduler adapter.
 
-### Tier 1 — Must Have
+### Tier 3 (Selected)
 
-- **Drag & Drop Email Builder** — Puck editor with React Email components (Button, Heading, Text, Image, Container, Section)
-- **Component Property Editing** — Sidebar editing for colors, typography, sizing, image URLs, content & links
-- **Live Email Preview** — Real-time preview updating as users edit
-- **Email Sending** — Send via Resend with recipient input, subject line, status notifications
-
-### Tier 2 — Expected
-
-- **Email Scheduling** — Durable workflow via Temporal with date/time picker, scheduled email list, cancellation
-- **Desktop & Mobile Preview** — Toggle between preview widths
-
-### Tier 3 — Impress Us
-
-- Undo / redo
-- Starter template library (Welcome Email, Newsletter, Promo)
-- Image upload, dark mode, keyboard shortcuts
+- Undo/redo buttons and keyboard shortcuts (`Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`).
+- Starter templates: Welcome Email, Newsletter, Promo.
 
 ## Architecture Decisions
 
-<!-- Document your decisions here as you build -->
+- Keep all user-facing builder functionality in a single page (`src/app/page.tsx`) for fast iteration and a cohesive UX.
+- Use `@puckeditor/core` as the source of truth for editable content structure and drag/drop behavior.
+- Puck owns structured editor state; React Email owns final email-safe rendering from that state.
+- Add a scheduler adapter (`src/lib/scheduler.ts`) so scheduling infrastructure is decoupled from delivery logic.
+- Define component schema and defaults in `src/lib/puck-config.tsx` to separate UI orchestration from content model.
+- Add `src/lib/templates.ts` for reusable starter template data with subjects.
+- Add `src/lib/email-render.tsx` for React Email component mapping and deterministic HTML generation used by `/api/send`.
+- Implement `/api/send` with Resend, but guard for missing API key with clear dev-mode mock success to avoid local crashes.
+
+## Tradeoffs
+
+- **Puck preview vs React Email preview:** Preview and send both use `renderEmailHtml()` so output matches Resend delivery.
+- **Local JSON scheduler vs Temporal:** JSON file store is simpler to run in review environments; Temporal adapter can replace `src/lib/scheduler.ts` without changing UI/API contracts.
+- **No persistence for drafts:** Editor state lives in the browser session; templates are static starters only.
+- **URL-based images only:** No upload pipeline or asset hosting in this take-home scope.
+- **Mock send without API key:** Returns explicit success in dev mode instead of failing, so reviewers can test flows without Resend credentials.
 
 ## Assumptions
 
-<!-- Document assumptions here -->
+- The take-home prioritizes builder/editor quality over production-grade persistence/auth.
+- Live preview should reflect render output in-app and generated email HTML should be inspectable.
+- Using URL-based image inputs is sufficient (no upload pipeline required).
+- Mock-send mode is acceptable when `RESEND_API_KEY` is absent.
 
 ## Time Spent
 
-<!-- Track your time here -->
+Approximately 5–6 hours:
 
-## Resources
+- Core editor + component schema: ~1.5h
+- React Email rendering + send flow: ~1h
+- Preview, templates, undo/redo shortcuts: ~1h
+- Tier 2 scheduling (UI, APIs, adapter): ~1.5h
+- Polish, docs, lint/build pass: ~1h
 
-- [Next.js Docs](https://nextjs.org/docs)
-- [Puck Editor](https://puckeditor.com)
-- [React Email](https://react.email)
-- [Resend](https://resend.com)
-- [Temporal](https://temporal.io)
+## What Works
+
+- Drag/drop visual editor powered by Puck.
+- Components: Heading, Text, Button, Image, Section, Container.
+- Editable props for content, colors, font size, padding, alignment, and links/URLs.
+- Live preview that updates as editor state changes.
+- Desktop/mobile preview width toggle.
+- Starter templates: Welcome Email, Newsletter, Promo.
+- Undo/redo buttons and keyboard shortcuts (`Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`).
+- Recipient + subject inputs and Send button.
+- Tier 2 scheduling: schedule date/time picker, schedule action, scheduled-email list, and cancellation UI.
+- Scheduling APIs: `POST /api/schedule`, `GET /api/schedule`, `DELETE /api/schedule/[id]`.
+- Scheduled payload shape: `id`, `to`, `subject`, `data`, `scheduledAt`, `status`.
+- `/api/send` route with Resend integration and dev-mode mock success fallback.
+
+## Scheduling Implementation
+
+- Uses a local adapter in `src/lib/scheduler.ts` backed by `.data/scheduled-emails.json`.
+- Routes:
+  - `POST /api/schedule` validates `to`, `subject`, and future `scheduledAt`, then stores schedule.
+  - `GET /api/schedule` lists all scheduled items.
+  - `DELETE /api/schedule/[id]` marks a scheduled item as `cancelled`.
+- Status values are currently `scheduled | cancelled | sent` (with `sent` reserved for future processor integration).
+
+## Why Local Adapter (vs Temporal)
+
+- For the take-home, a local JSON-backed adapter is easier to run and deploy without extra infra.
+- This keeps setup lightweight and deterministic for reviewers while still modeling real scheduling contracts.
+- The adapter boundary keeps the app logic stable while the backend scheduler implementation changes.
+
+## Temporal Integration Later
+
+- Replace the `scheduler` adapter implementation with a Temporal-backed adapter while preserving the same interface (`list`, `schedule`, `cancel`).
+- `schedule` would start a Temporal workflow/timer per job (or enqueue a durable schedule task).
+- `cancel` would signal/cancel the workflow.
+- A worker would execute due emails by calling the same rendering + send pathway used today.
+
+## Future Improvements
+
+- Save/load drafts and templates from a database.
+- Add rich text controls and inline color pickers for better authoring UX.
+- Add image upload support and hosted asset management.
+- Add test coverage (unit tests for renderer + API route, E2E for send flow).
+- Add accessibility audits and email-client compatibility snapshots.

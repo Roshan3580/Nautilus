@@ -4,8 +4,20 @@ A visual email authoring workflow that keeps editor state, live preview, immedia
 
 ## 1-minute walkthrough
 
-<!-- TODO: Replace with Loom or YouTube embed -->
-> **Walkthrough placeholder:** Record a 60-second demo covering template selection, block editing, live preview, Send Now, and scheduling a future send. Link it here when ready.
+<div align="center">
+  <a href="https://www.loom.com/share/4ef1c4e8e5e040c9a4629eda00e47d18">
+    <img
+      style="max-width:900px;"
+      src="https://cdn.loom.com/sessions/thumbnails/4ef1c4e8e5e040c9a4629eda00e47d18-31042fb795b75e4b-full-play.gif#t=0.1"
+      alt="Nautilus Visual Email Workflow with Resend">
+  </a>
+</div>
+
+<p align="center">
+  <a href="https://www.loom.com/share/4ef1c4e8e5e040c9a4629eda00e47d18">
+    Watch Full Demo →
+  </a>
+</p>
 
 ## Live demo
 

@@ -15,7 +15,6 @@ A visual email authoring workflow that keeps editor state, live preview, immedia
 
 <p align="center">
   <a href="https://www.loom.com/share/4ef1c4e8e5e040c9a4629eda00e47d18">
-    Watch Full Demo →
   </a>
 </p>
 
